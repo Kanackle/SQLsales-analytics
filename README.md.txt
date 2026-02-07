@@ -35,9 +35,9 @@ Notes: (any setup steps)
 	3 most profitable places are Rockville, Greensboro, Cary
 
 ## Key Insights (3–6 bullets)
-Insight 1:
-Insight 2:
-Insight 3:
+Insight 1: Although Nancy has the 2nd most customers, she averages the 4th highest revenue. This means her overall sales numbers are not very high. Whether that is because her customers don't buy much, or because she has extreme outliers dragging down her average is a question for another analysis. 
+Insight 2: High order volume does not necessarily mean high revenue. QUICK-Stop generates the most revenue whereas Save-a-lot Markets have placed the most orders. That makes revenue analysis crucial when looking order frequency. This also shows the importance of individual goods analysis as the price of each item in an order determines the total price of the order. 
+Insight 3: Revenue vs order analysis also helps place customers in two groups: high frequency, low-value AND low frequency, high value. Further analysis in this sector can help companies figure out customer retention strategies and also customer behaviors/preferences.  
 
 ## Files
 `queries.sql`: all final SQL queries
