@@ -124,3 +124,25 @@ join orderdetails
 on orders.OrderID = orderdetails.OrderID
 group by CompanyName
 order by TotalOrders desc, Revenue desc;
+
+-- Query 10
+-- Customers per Sales Rep
+Select concat(employees.FirstName,' ',employees.LastName) as SalesRep, Count(Distinct orders.CustomerID) as TotalCustomers
+from employees
+join orders
+on employees.EmployeeID = orders.EmployeeID
+group by employees.EmployeeID
+order by TotalCustomers desc;
+
+-- Query 11
+-- Total and average revenue per sales rep
+Select concat(employees.FirstName,' ',employees.LastName) as SalesRep, 
+sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue,
+sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) / count(distinct orders.CustomerID) as AvgRevPerCustomer
+from employees
+join orders
+on employees.EmployeeID = orders.EmployeeID
+join orderdetails
+on orders.OrderID = orderdetails.OrderID
+group by employees.EmployeeID
+order by Revenue desc;
