@@ -114,7 +114,7 @@ group by customers.CompanyName
 order by count(CompanyName) desc;
 
 -- Query 9
--- Total revenue per company
+-- Total revenue per company combined with total orders
 Select CompanyName, count(Distinct orders.OrderID) as TotalOrders, 
 sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue
 from customers
