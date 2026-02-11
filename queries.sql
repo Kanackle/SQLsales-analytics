@@ -1,18 +1,14 @@
 USE northwind;
-
-select * from orders;
-select * from orderdetails;
-select * from customers;
-select * from suppliers;
-
-
 -- Query 1:
 -- revenue over time, by OrderID, per month
 select orders.OrderID, year(orders.OrderDate) as year, month(orders.OrderDate) as month,
-sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue
+sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue,
+customers.CompanyName
 from orders 
 join orderdetails 
 on orderdetails.OrderID = orders.OrderID
+join customers
+on orders.CustomerID = customers.CustomerID
 group by orders.OrderID
 order by year, month;
 
@@ -33,7 +29,7 @@ order by year, month;
 Select customers.CustomerID, customers.CompanyName,
 sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue
 from orders
-join customers
+join customers 
 on customers.CustomerID = orders.CustomerID 
 join orderdetails
 on orders.OrderID = orderdetails.OrderID
