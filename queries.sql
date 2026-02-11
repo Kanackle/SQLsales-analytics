@@ -1,144 +1,159 @@
 USE northwind;
--- Query 1:
--- revenue over time, by OrderID, per month
-select orders.OrderID, year(orders.OrderDate) as year, month(orders.OrderDate) as month,
-sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue,
-customers.CompanyName
-from orders 
-join orderdetails 
-on orderdetails.OrderID = orders.OrderID
-join customers
-on orders.CustomerID = customers.CustomerID
-group by orders.OrderID
+
+/* ----------------------------------------------------
+	Sales & Customer Analytics (Northwinds Database)
+    Author: Kanak Somani
+    Environment: MySQL/MySQL Workbench
+    ---------------------------------------------------- */
+
+/* -------------------------------------------
+		REVENUE ANALYTICS
+	------------------------------------------ */
+    
+-- Monthly revenue trend
+select year(o.OrderDate) as year, month(o.OrderDate) as month,
+sum(od.UnitPrice * od.Quantity * (1-od.Discount)) as Revenue
+from orders o 
+join orderdetails od 
+on od.OrderID = o.OrderID
+group by year(o.OrderDate), month(o.OrderDate)
 order by year, month;
 
-
--- Query 2
--- revenue over time by year and month
-select year(orders.OrderDate) as year, month(orders.OrderDate) as month,
-sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue
-from orders 
-join orderdetails 
-on orderdetails.OrderID = orders.OrderID
-group by year(orders.OrderDate), month(orders.OrderDate)
+    
+-- Revenue by order
+select o.OrderID, year(o.OrderDate) as year, month(o.OrderDate) as month,
+sum(od.UnitPrice * od.Quantity * (1-od.Discount)) as Revenue,
+c.CompanyName
+from orders o
+join orderdetails od
+on od.OrderID = o.OrderID
+join customers c
+on o.CustomerID = c.CustomerID
+group by o.OrderID, year(o.OrderDate), month(o.OrderDate)
 order by year, month;
 
+/* ------------------------------------------
+	PRODUCT REVENUE ANALYSIS
+    ----------------------------------------- */
 
--- Query 3
+-- top 5 products by revenue
+select p.ProductName, sum(od.UnitPrice * od.Quantity * (1-od.Discount)) as Revenue
+from products p
+join orderdetails od
+on p.ProductID = od.ProductID
+group by p.ProductID
+limit 5;
+
+-- Total revenue per product per company/customer
+Select p.ProductName,
+sum(od.UnitPrice * od.Quantity * (1-od.Discount)) as Revenue,
+c.CompanyName
+from orderdetails od
+join products p
+on od.ProductID = p.ProductID
+join orders o
+on od.OrderID = o.OrderID
+join customers c
+on c.CustomerID = o.CustomerID
+group by p.ProductName, c.CompanyName
+order by c.CompanyName, Revenue desc;
+
+
+/* -------------------------------------
+	CUSTOMER REVENUE ANALYSIS
+    ------------------------------------ */
+
 -- order total revenue by customer
-Select customers.CustomerID, customers.CompanyName,
-sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue
-from orders
-join customers 
-on customers.CustomerID = orders.CustomerID 
-join orderdetails
-on orders.OrderID = orderdetails.OrderID
+Select c.CustomerID, c.CompanyName,
+sum(od.UnitPrice * od.Quantity * (1-od.Discount)) as Revenue
+from orders o
+join customers c 
+on c.CustomerID = o.CustomerID 
+join orderdetails od
+on o.OrderID = od.OrderID
 group by CustomerID
 order by Revenue desc;
 
--- revenue by product per customer
--- Select orders.OrderID, customer.CustomerID, customer.CustomerName,
--- products.ProductID, products.ProductName,
--- sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue
--- from orderdetails
--- join products
--- on orderdetails.ProductID = products.ProductID;
+-- Total orders + revenue per customer
+Select c.CompanyName, count(Distinct o.OrderID) as TotalOrders, 
+sum(od.UnitPrice * od.Quantity * (1-od.Discount)) as Revenue
+from customers c
+join orders o 
+on c.CustomerID = o.CustomerID
+join OrderDetails od
+on o.OrderID = od.OrderID
+group by c.CompanyName
+order by TotalOrders desc, Revenue desc;
 
--- Query 4
--- Total revenue per product per company/customer
-Select products.ProductName,
-sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue,
-customers.CompanyName
-from orderdetails
-join products
-on orderdetails.ProductID = products.ProductID
-join orders
-on orderdetails.OrderID = orders.OrderID
-join customers
-on customers.CustomerID = orders.CustomerID
-group by products.ProductName, customers.CompanyName
-order by customers.CompanyName, products.ProductName;
 
--- Query 5
+/* --------------------------------------
+	SALES REP ANALYSIS
+    ------------------------------------- */
 -- revenue by company by salesperson
-select customers.CompanyName, concat(employees.FirstName,' ',employees.LastName) as SalesRep,
-sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue
-from orders
-join employees
-on orders.EmployeeID = employees.EmployeeID
-join orderdetails
-on orders.OrderID = orderdetails.OrderID
-join customers
-on orders.CustomerID = customers.CustomerID
-group by customers.CompanyName, employees.EmployeeID;
+select c.CompanyName, concat(e.FirstName,' ',e.LastName) as SalesRep,
+sum(od.UnitPrice * od.Quantity * (1-od.Discount)) as Revenue
+from orders o
+join employees e
+on o.EmployeeID = e.EmployeeID
+join orderdetails od
+on o.OrderID = od.OrderID
+join customers c
+on o.CustomerID = c.CustomerID
+group by c.CompanyName, e.EmployeeID, SalesRep
+order by Revenue desc;
 
 
--- Query 6
--- top 5 products by revenue
-select products.ProductName, sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue
-from products
-join orderdetails
-on products.ProductID = orderdetails.ProductID
-group by products.ProductID
-limit 5;
+-- Customers per Sales Rep
+Select concat(e.FirstName,' ',e.LastName) as SalesRep, 
+Count(Distinct o.CustomerID) as TotalCustomers
+from employees e
+join orders o
+on e.EmployeeID = o.EmployeeID
+group by e.EmployeeID
+order by TotalCustomers desc;
+
+-- Total and average revenue per sales rep
+Select concat(e.FirstName,' ',e.LastName) as SalesRep, 
+sum(od.UnitPrice * od.Quantity * (1-od.Discount)) as Revenue,
+sum(od.UnitPrice * od.Quantity * (1-od.Discount)) / count(distinct o.CustomerID) as AvgRevPerCustomer
+from employees e
+join orders o
+on e.EmployeeID = o.EmployeeID
+join orderdetails od
+on o.OrderID = od.OrderID
+group by e.EmployeeID
+order by Revenue desc;
 
 
--- Query 7
+/* --------------------------
+	GEOGRAPHY REVENUE ANALYSIS
+    ------------------------- */
+
+/* Query 7
 -- revenue by region
+****** THIS IS WRONG - TERRITORY DOUBLE COUNTS ********
+
 select territories.TerritoryDescription,
 sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue
 from territories
 join employeeterritories
 on territories.TerritoryID = employeeterritories.TerritoryID
--- join employees
--- on employeeterritories.EmployeeID = employees.EmployeeID
 join orders
 on employeeterritories.EmployeeID = orders.EmployeeID
 join orderdetails
 on orders.OrderID = orderdetails.OrderID
 group by territories.TerritoryID, territories.TerritoryDescription
 order by Revenue desc;
+*/
 
--- Query 8
--- Total orders per company
-Select CompanyName, count(CompanyName)
-from customers
-join orders
--- on customers.CustomerID = orders.CustomerID
-on orders.CustomerID = customers.CustomerID
-group by customers.CompanyName
-order by count(CompanyName) desc;
+Select o.ShipCountry, sum(od.UnitPrice * od.Quantity * (1-od.Discount)) as Revenue
+from Orders o
+join OrderDetails od 
+on od.OrderID = o.OrderID
+group by o.ShipCountry
+order by revenue desc;
 
--- Query 9
--- Total revenue per company combined with total orders
-Select CompanyName, count(Distinct orders.OrderID) as TotalOrders, 
-sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue
-from customers
-join orders
-on customers.CustomerID = orders.CustomerID
-join orderdetails
-on orders.OrderID = orderdetails.OrderID
-group by CompanyName
-order by TotalOrders desc, Revenue desc;
 
--- Query 10
--- Customers per Sales Rep
-Select concat(employees.FirstName,' ',employees.LastName) as SalesRep, Count(Distinct orders.CustomerID) as TotalCustomers
-from employees
-join orders
-on employees.EmployeeID = orders.EmployeeID
-group by employees.EmployeeID
-order by TotalCustomers desc;
 
--- Query 11
--- Total and average revenue per sales rep
-Select concat(employees.FirstName,' ',employees.LastName) as SalesRep, 
-sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) as Revenue,
-sum(orderdetails.UnitPrice * orderdetails.Quantity * (1-orderdetails.Discount)) / count(distinct orders.CustomerID) as AvgRevPerCustomer
-from employees
-join orders
-on employees.EmployeeID = orders.EmployeeID
-join orderdetails
-on orders.OrderID = orderdetails.OrderID
-group by employees.EmployeeID
-order by Revenue desc;
+
+
